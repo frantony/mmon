@@ -118,8 +118,28 @@ reset_exception:
         .set    at
 
         .align  10      /* bfc00400: ITPROM boot package table */
+	.org	0x500	/* bfc00500: YAMON API table */
+	.word	start
+	.word	print_count
+	.org	0x520
+	.word	start
+	.org	0x52c
+	.word	flush_cache
+	.org	0x534
+	.word	print
+	.org	0x538
+	.word	reg_cpu_isr
+	.word	unred_cpu_isr
+	.word	reg_ic_isr
+	.word	unred_ic_isr
+	.word	reg_esr
+	.word	unreg_esr
+	.org	0x550
+	.word	getchar
+	.org	0x554
+	.word	syscon_read
 
-
+	.org	0x580
 /*
  * This is the entry point for standalone test code
  */
@@ -1863,3 +1883,48 @@ handle_exc:
 
 	j	main			# go back to command interpreter
 	nop
+
+reg_cpu_isr:
+unred_cpu_isr:
+reg_ic_isr:
+unred_ic_isr:
+reg_esr:
+unreg_esr:
+flush_cache:
+getchar:
+syscon_read:
+ret:	li	v0,0
+	j	ra
+
+print:	move	t7,ra
+	move	t6,a1
+
+print0:	lbu	a0,0(t6)		# get byte
+	addi	t6,t6,1
+
+	beqz	a0,print9
+	nop
+
+	jal	outch
+        nop
+
+        j	print0
+        nop
+
+print9:	j	t7
+	nop
+
+print_count:
+	move	t7,ra
+	move	t6,a1
+	move	t8,a2			# count
+
+prc0:	lbu	a0,0(t6)		# get byte
+	jal	outch
+	nop
+	addi	t6,t6,1
+	addi	t8,t8,-1
+	bnez	t8,prc0
+	nop
+
+	j	t7

@@ -18,6 +18,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 BASE=/export/tools/bin
+#
 CC=$(BASE)/mipsel-linux-gcc
 LD=$(BASE)/mipsel-linux-ld
 CONV=$(BASE)/mipsel-linux-conv
@@ -25,7 +26,7 @@ DUMP=$(BASE)/mipsel-linux-objdump
 OBJCOPY=$(BASE)/mipsel-linux-objcopy
 
 # for real hardware
-CFLAGS=-EL -G 0 -mips32 -DR4000 -nostdinc -fno-pic -mno-abicalls -Wall
+CFLAGS=-G 0 -mips32 -DR4000 -nostdinc -fno-pic -mno-abicalls -Wall
 #LDFLAGS=-n  -Ttext bfc00000 -Tdata a0000010
 LDFLAGS=-G 0 --script=stand.ldscript \
 	--entry=reset_exception \
@@ -55,7 +56,9 @@ all:	bios reset
 .PHONY:	all
 
 clean:
-	rm -f mmon mmon.dmp *.sr *.pr *.o *.map *.bin
+	@rm -f mmon mmon.dmp *.elf *.sr *.pr *.o *.map *.bin
+	@rm -f reset
+	@rm -f mipsel_bios.bin
 .PHONY:	clean
 
 floppy:	README $(PROTSRECS)
@@ -65,14 +68,15 @@ floppy:	README $(PROTSRECS)
 .PHONY:	floppy
 
 mmon:	main.o
-	$(LD) -o mmon.elf -G 0 --script=stand.ldscript --entry=reset_exception --omagic -Ttext 0x80008000 -Tdata 80000010  main.o
+#	$(LD) -o mmon.elf -G 0 --script=stand.ldscript --entry=reset_exception --omagic -Ttext 0x80008000 -Tdata 80000010  main.o
 	$(LD) -o mmon $(LDFLAGS) main.o
 
 bios:	mmon	
-	$(OBJCOPY) -S -j .text --output-target binary mmon mmon.bin
-	dd if=/dev/zero of=empty.bin bs=1024 count=128
-	cat mmon.bin empty.bin >m.bin
-	dd if=m.bin of=mips_bios.bin bs=1024 count=128
+	$(OBJCOPY) -S -j .text --output-target binary mmon mipsel_bios.bin
+#       make 128K binary
+#	dd if=/dev/zero of=empty.bin bs=1024 count=128
+#	cat mmon.bin empty.bin >m.bin
+#	dd if=m.bin of=mips_bios.bin bs=1024 count=128
 
 reset:	reset.o
 	$(LD) -o reset -G 0 --script=stand.ldscript  --omagic --discard-all --strip-all --entry=start -Ttext 80008000 reset.o 
